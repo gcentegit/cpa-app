@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: cpa-backend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://cpa:${DB_PASSWORD}@postgres:5432/cpa_prod
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - REDIS_URL=redis://redis:6379
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - S3_BUCKET=${S3_BUCKET}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cpa-network
+
+  frontend:
+    build: ./frontend
+    container_name: cpa-frontend-prod
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - cpa-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: cpa-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cpa_prod
+      POSTGRES_USER: cpa
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - cpa-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cpa-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - cpa-network
+
+networks:
+  cpa-network:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cpa-postgres-dev
+    environment:
+      POSTGRES_DB: cpa_dev
+      POSTGRES_USER: cpa
+      POSTGRES_PASSWORD: cpa_local
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: cpa-redis-dev
+    ports:
+      - '6379:6379'
+
+volumes:
+  postgres_dev_data:

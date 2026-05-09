@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: cpa-backend-staging
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=staging
+      - DATABASE_URL=postgresql://cpa:${DB_PASSWORD}@postgres:5432/cpa_staging
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - REDIS_URL=redis://redis:6379
+      - STORAGE_TYPE=local
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cpa-staging-network
+
+  frontend:
+    build: ./frontend
+    container_name: cpa-frontend-staging
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - cpa-staging-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: cpa-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cpa_staging
+      POSTGRES_USER: cpa
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    networks:
+      - cpa-staging-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cpa-redis-staging
+    restart: unless-stopped
+    volumes:
+      - redis_staging_data:/data
+    networks:
+      - cpa-staging-network
+
+networks:
+  cpa-staging-network:
+    driver: bridge
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
